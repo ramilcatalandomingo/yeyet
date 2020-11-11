@@ -19,15 +19,15 @@ export class HomePage {
   percent: number = 0;
   radius: number = 100;
   minutes: number = 1;
-  seconds: any = 10;
+  seconds: any = 0;
   timer: any = false;
   overallTimer: any = false;
-  fullTime: any = '00:20:00';
+  fullTime: any = '00:01:00';
 
 
   countDownTimer: any = false;
   timeLeft: any = {
-    m: '00',
+    m: '01',
     s: '00'
   };
   remainingTime = `${this.timeLeft.m}:${this.timeLeft.s}`;
@@ -104,7 +104,7 @@ export class HomePage {
       s: '00'
     }
     this.timeLeft = {
-      m: '00',
+      m: '01',
       s: '00'
     }
     this.remainingTime = `${this.pad(this.timeLeft.m, 2)}:${this.pad(this.timeLeft.s, 2)}`;

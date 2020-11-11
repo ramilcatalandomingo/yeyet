@@ -8,6 +8,8 @@ import { StatusBar } from '@ionic-native/status-bar/ngx';
 
 import { AppComponent } from './app.component';
 import { AppRoutingModule } from './app-routing.module';
+import { Insomnia } from '@ionic-native/insomnia/ngx';
+import { NavigationBar } from '@ionic-native/navigation-bar/ngx';
 
 @NgModule({
   declarations: [AppComponent],
@@ -16,6 +18,8 @@ import { AppRoutingModule } from './app-routing.module';
   providers: [
     StatusBar,
     SplashScreen,
+    Insomnia,
+    NavigationBar,
     { provide: RouteReuseStrategy, useClass: IonicRouteStrategy }
   ],
   bootstrap: [AppComponent]

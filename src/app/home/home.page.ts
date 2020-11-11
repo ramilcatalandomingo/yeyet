@@ -1,13 +1,16 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { Insomnia } from '@ionic-native/insomnia/ngx';
 import { NavigationBar } from '@ionic-native/navigation-bar/ngx';
+import { Plugins, LocalNotificationEnabledResult, LocalNotificationActionPerformed, LocalNotification, Device } from '@capacitor/core';
+import { AlertController } from '@ionic/angular';
+const { LocalNotifications } = Plugins;
 
 @Component({
   selector: 'app-home',
   templateUrl: 'home.page.html',
   styleUrls: ['home.page.scss'],
 })
-export class HomePage {
+export class HomePage implements OnInit {
 
   elapsed: any = {
     h: '00',
@@ -32,11 +35,31 @@ export class HomePage {
   };
   remainingTime = `${this.timeLeft.m}:${this.timeLeft.s}`;
 
-  constructor(private insomnia: Insomnia, private navigationBar: NavigationBar) {
+  constructor(private insomnia: Insomnia, private navigationBar: NavigationBar, private alertCtrl: AlertController) {
 
     let autoHide: boolean = true;
     this.navigationBar.setUp(autoHide);
 
+  }
+
+  async ngOnInit() {
+    await LocalNotifications.requestPermission();
+
+    LocalNotifications.addListener('localNotificationReceived', (notification: LocalNotification) => {
+      this.presentAlert(`Received: ${notification.title}`, null);
+    });
+
+    LocalNotifications.addListener('localNotificationActionPerformed', (notification: LocalNotificationActionPerformed) => {
+      this.presentAlert(`Performed: ${notification.actionId}`, null);
+    });
+  }
+
+  async presentAlert(header, message) {
+    const alert = await this.alertCtrl.create({
+      header,
+      message,
+      buttons: ['OK']
+    });
   }
 
   touchMe() {
@@ -87,6 +110,25 @@ export class HomePage {
     // timers start 1 second later
     this.countDownTimer = setInterval(backwardsTimer, 1000)
     this.timer = setInterval(forwardsTimer, 1000)
+
+    //setup notifications
+    this.scheduleNotification();
+  }
+
+  async scheduleNotification() {
+    await LocalNotifications.schedule({
+      notifications: [
+        {
+          title: 'Friendly Reminder',
+          body: 'Yeyet says take a quick break by doing the 20-20-20 rule.',
+          id: 1,
+          schedule: { 
+            every: 'minute',
+            count: 1
+          }
+        }
+      ]
+    });
   }
 
   stopTimer() {

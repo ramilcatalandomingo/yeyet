@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { Insomnia } from '@ionic-native/insomnia/ngx';
 import { NavigationBar } from '@ionic-native/navigation-bar/ngx';
-import { Plugins, LocalNotificationEnabledResult, LocalNotificationActionPerformed, LocalNotification, Device } from '@capacitor/core';
+import { Plugins, LocalNotificationEnabledResult, LocalNotificationActionPerformed, LocalNotification, Device, LocalNotificationPendingList } from '@capacitor/core';
 import { AlertController } from '@ionic/angular';
 const { LocalNotifications } = Plugins;
 
@@ -12,11 +12,11 @@ const { LocalNotifications } = Plugins;
 })
 export class HomePage implements OnInit {
 
-  elapsed: any = {
-    h: '00',
-    m: '00',
-    s: '00'
-  }
+  // elapsed: any = {
+  //   h: '00',
+  //   m: '00',
+  //   s: '00'
+  // }
   progress: any = 0;
   overallProgress: any = 0;
   percent: number = 0;
@@ -27,13 +27,14 @@ export class HomePage implements OnInit {
   overallTimer: any = false;
   fullTime: any = '00:01:00';
 
-
   countDownTimer: any = false;
   timeLeft: any = {
     m: '01',
     s: '00'
   };
   remainingTime = `${this.timeLeft.m}:${this.timeLeft.s}`;
+
+  scheduledNotification: any = false;
 
   constructor(private insomnia: Insomnia, private navigationBar: NavigationBar, private alertCtrl: AlertController) {
 
@@ -46,11 +47,13 @@ export class HomePage implements OnInit {
     await LocalNotifications.requestPermission();
 
     LocalNotifications.addListener('localNotificationReceived', (notification: LocalNotification) => {
-      this.presentAlert(`Received: ${notification.title}`, null);
+      // this.presentAlert(`Received: ${notification.title}`, `${notification.body}`);
+      console.log(`Received: ${notification.title}`, `${notification.body}`);
     });
 
     LocalNotifications.addListener('localNotificationActionPerformed', (notification: LocalNotificationActionPerformed) => {
-      this.presentAlert(`Performed: ${notification.actionId}`, null);
+      // this.presentAlert(`Performed: ${notification.actionId}`, null);
+      console.log(`Performed: ${notification.actionId}`, null);
     });
   }
 
@@ -60,6 +63,8 @@ export class HomePage implements OnInit {
       message,
       buttons: ['OK']
     });
+
+    await alert.present();
   }
 
   touchMe() {
@@ -73,7 +78,7 @@ export class HomePage implements OnInit {
       clearInterval(this.countDownTimer);
     }
     if (!this.overallTimer) {
-      this.progressTimer();
+      // this.progressTimer();
       this.insomnia.keepAwake()
     }
 
@@ -89,7 +94,14 @@ export class HomePage implements OnInit {
     let secondsLeft = totalSeconds;
 
     let forwardsTimer = () => {
-      if (this.percent == this.radius) clearInterval(this.timer)
+      if (this.percent == this.radius) {
+        this.resetTimer()
+
+        // schedule notification
+        if (!this.scheduledNotification) this.scheduleNotification();
+
+        this.startTimer();
+      }
       this.percent = Math.floor((this.progress / totalSeconds) * 100)
       ++this.progress
     }
@@ -111,8 +123,6 @@ export class HomePage implements OnInit {
     this.countDownTimer = setInterval(backwardsTimer, 1000)
     this.timer = setInterval(forwardsTimer, 1000)
 
-    //setup notifications
-    this.scheduleNotification();
   }
 
   async scheduleNotification() {
@@ -120,18 +130,41 @@ export class HomePage implements OnInit {
       notifications: [
         {
           title: 'Friendly Reminder',
-          body: 'Yeyet says take a quick break by doing the 20-20-20 rule.',
+          body: 'Yeyet says take a quick break from your screen or device by looking 20 feet away or by closing your eyes for 20 seconds.',
           id: 1,
-          schedule: { 
+          schedule: {
             every: 'minute',
             count: 1
           }
         }
       ]
     });
+    this.scheduledNotification = true;
+    console.log('this.scheduleNotification');
+  }
+
+  cancelNotification() {
+    const pending: LocalNotificationPendingList = {
+      notifications: [
+        {
+          id: '1'
+        },
+      ],
+    };
+    this.scheduledNotification = false;
+    console.log('this.cancelNotification');
+    return LocalNotifications.cancel(pending);
   }
 
   stopTimer() {
+
+    this.cancelNotification();
+    this.resetTimer();
+    this.insomnia.allowSleepAgain()
+  }
+
+  resetTimer() {
+
     clearInterval(this.countDownTimer);
     clearInterval(this.timer);
     clearInterval(this.overallTimer);
@@ -140,40 +173,40 @@ export class HomePage implements OnInit {
     this.timer = false;
     this.percent = 0;
     this.progress = 0;
-    this.elapsed = {
-      h: '00',
-      m: '00',
-      s: '00'
-    }
+    // this.elapsed = {
+    //   h: '00',
+    //   m: '00',
+    //   s: '00'
+    // }
     this.timeLeft = {
       m: '01',
       s: '00'
     }
     this.remainingTime = `${this.pad(this.timeLeft.m, 2)}:${this.pad(this.timeLeft.s, 2)}`;
-    this.insomnia.allowSleepAgain()
+
   }
 
-  progressTimer() {
-    let countDownDate = new Date();
+  // progressTimer() {
+  //   let countDownDate = new Date();
 
-    this.overallTimer = setInterval(() => {
-      let now = new Date().getTime();
+  //   this.overallTimer = setInterval(() => {
+  //     let now = new Date().getTime();
 
-      // Find the distance between now an the count down date
-      var distance = now - countDownDate.getTime();
+  //     // Find the distance between now an the count down date
+  //     var distance = now - countDownDate.getTime();
 
-      // Time calculations for hours, minutes and seconds
+  //     // Time calculations for hours, minutes and seconds
 
-      this.elapsed.h = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-      this.elapsed.m = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-      this.elapsed.s = Math.floor((distance % (1000 * 60)) / 1000);
+  //     this.elapsed.h = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+  //     this.elapsed.m = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+  //     this.elapsed.s = Math.floor((distance % (1000 * 60)) / 1000);
 
-      this.elapsed.h = this.pad(this.elapsed.h, 2);
-      this.elapsed.m = this.pad(this.elapsed.m, 2);
-      this.elapsed.s = this.pad(this.elapsed.s, 2);
+  //     this.elapsed.h = this.pad(this.elapsed.h, 2);
+  //     this.elapsed.m = this.pad(this.elapsed.m, 2);
+  //     this.elapsed.s = this.pad(this.elapsed.s, 2);
 
-    }, 1000)
-  }
+  //   }, 1000)
+  // }
 
   pad(num, size) {
     let s = num + "";
@@ -181,8 +214,8 @@ export class HomePage implements OnInit {
     return s;
   }
 
-  updateMyDate($event) {
-    console.log($event.split(":"));
-  }
+  // updateMyDate($event) {
+  //   console.log($event.split(":"));
+  // }
 
 }

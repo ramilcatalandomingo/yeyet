@@ -34,7 +34,7 @@ export class HomePage implements OnInit {
   };
   remainingTime = `${this.timeLeft.m}:${this.timeLeft.s}`;
 
-  scheduledNotification: any = false;
+  scheduledNotification: boolean = false;
 
   constructor(private insomnia: Insomnia, private navigationBar: NavigationBar, private alertCtrl: AlertController) {
 

@@ -70,6 +70,8 @@ export class HomePage implements OnInit {
             value: JSON.stringify(this.timeLeft)
           });
 
+          this.stopTimer();
+
           // Must call in order to end our task otherwise
           // we risk our app being terminated, and possibly
           // being labeled as impacting battery life

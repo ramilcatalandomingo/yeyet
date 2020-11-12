@@ -12,29 +12,27 @@ const { LocalNotifications } = Plugins;
 })
 export class HomePage implements OnInit {
 
-  // elapsed: any = {
-  //   h: '00',
-  //   m: '00',
-  //   s: '00'
-  // }
+  elapsed: any = {
+    h: '00',
+    m: '00',
+    s: '00'
+  }
   progress: any = 0;
   overallProgress: any = 0;
   percent: number = 0;
   radius: number = 100;
-  minutes: number = 1;
-  seconds: any = 0;
+  minutes: number = 0;
+  seconds: any = 10;
   timer: any = false;
   overallTimer: any = false;
-  fullTime: any = '00:01:00';
+  fullTime: any = '00:00:10';
 
   countDownTimer: any = false;
   timeLeft: any = {
-    m: '01',
-    s: '00'
+    m: '00',
+    s: '10'
   };
   remainingTime = `${this.timeLeft.m}:${this.timeLeft.s}`;
-
-  scheduledNotification: any = false;
 
   constructor(private insomnia: Insomnia, private navigationBar: NavigationBar, private alertCtrl: AlertController) {
 
@@ -78,7 +76,7 @@ export class HomePage implements OnInit {
       clearInterval(this.countDownTimer);
     }
     if (!this.overallTimer) {
-      // this.progressTimer();
+      this.progressTimer();
       this.insomnia.keepAwake()
     }
 
@@ -95,11 +93,8 @@ export class HomePage implements OnInit {
 
     let forwardsTimer = () => {
       if (this.percent == this.radius) {
+        this.raiseNotification();
         this.resetTimer()
-
-        // schedule notification
-        if (!this.scheduledNotification) this.scheduleNotification();
-
         this.startTimer();
       }
       this.percent = Math.floor((this.progress / totalSeconds) * 100)
@@ -125,22 +120,18 @@ export class HomePage implements OnInit {
 
   }
 
-  async scheduleNotification() {
+  async raiseNotification() {
     await LocalNotifications.schedule({
       notifications: [
         {
-          title: 'Friendly Reminder',
-          body: 'Yeyet says take a quick break from your screen or device by looking 20 feet away or by closing your eyes for 20 seconds.',
+          title: 'Yeyet Reminder',
+          body: 'Please take a quick break from your screen or device by looking 20 feet away or by closing your eyes for 20 seconds.',
           id: 1,
-          schedule: {
-            every: 'minute',
-            count: 1
-          }
+          schedule: { at: new Date(Date.now()) },
         }
       ]
     });
-    this.scheduledNotification = true;
-    console.log('this.scheduleNotification');
+    console.log('this.raiseNotification');
   }
 
   cancelNotification() {
@@ -151,7 +142,6 @@ export class HomePage implements OnInit {
         },
       ],
     };
-    this.scheduledNotification = false;
     console.log('this.cancelNotification');
     return LocalNotifications.cancel(pending);
   }
@@ -173,40 +163,40 @@ export class HomePage implements OnInit {
     this.timer = false;
     this.percent = 0;
     this.progress = 0;
-    // this.elapsed = {
-    //   h: '00',
-    //   m: '00',
-    //   s: '00'
-    // }
-    this.timeLeft = {
-      m: '01',
+    this.elapsed = {
+      h: '00',
+      m: '00',
       s: '00'
+    }
+    this.timeLeft = {
+      m: '00',
+      s: '10'
     }
     this.remainingTime = `${this.pad(this.timeLeft.m, 2)}:${this.pad(this.timeLeft.s, 2)}`;
 
   }
 
-  // progressTimer() {
-  //   let countDownDate = new Date();
+  progressTimer() {
+    let countDownDate = new Date();
 
-  //   this.overallTimer = setInterval(() => {
-  //     let now = new Date().getTime();
+    this.overallTimer = setInterval(() => {
+      let now = new Date().getTime();
 
-  //     // Find the distance between now an the count down date
-  //     var distance = now - countDownDate.getTime();
+      // Find the distance between now an the count down date
+      var distance = now - countDownDate.getTime();
 
-  //     // Time calculations for hours, minutes and seconds
+      // Time calculations for hours, minutes and seconds
 
-  //     this.elapsed.h = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-  //     this.elapsed.m = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-  //     this.elapsed.s = Math.floor((distance % (1000 * 60)) / 1000);
+      this.elapsed.h = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      this.elapsed.m = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+      this.elapsed.s = Math.floor((distance % (1000 * 60)) / 1000);
 
-  //     this.elapsed.h = this.pad(this.elapsed.h, 2);
-  //     this.elapsed.m = this.pad(this.elapsed.m, 2);
-  //     this.elapsed.s = this.pad(this.elapsed.s, 2);
+      this.elapsed.h = this.pad(this.elapsed.h, 2);
+      this.elapsed.m = this.pad(this.elapsed.m, 2);
+      this.elapsed.s = this.pad(this.elapsed.s, 2);
 
-  //   }, 1000)
-  // }
+    }, 1000)
+  }
 
   pad(num, size) {
     let s = num + "";
@@ -214,8 +204,8 @@ export class HomePage implements OnInit {
     return s;
   }
 
-  // updateMyDate($event) {
-  //   console.log($event.split(":"));
-  // }
+  updateMyDate($event) {
+    console.log($event.split(":"));
+  }
 
 }

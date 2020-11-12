@@ -6,13 +6,13 @@
       (ionChange)="updateMyDate(myPicker.value)"></ion-datetime>
   </ion-item> -->
 
-  <div [style.height]="'60%'">
+  <!-- <div [style.height]="'60%'"> -->
     <circle-progress (click)="startTimer()" [percent]="percent" [maxPercent]="100" [radius]="radius" [showTitle]="false"
       [showSubtitle]="true" [subtitle]="remainingTime" [subtitleFontSize]="40" [showUnits]="false"
       [outerStrokeWidth]="16" [outerStrokeColor]="'#f763c6'" [showZeroOuterStroke]="false"
       [backgroundStroke]="'#f081cb'" [backgroundStrokeWidth]="3" [outerStrokeGradient]="true"
       [outerStrokeGradientStopColor]="'#9c0269'" [showInnerStroke]="false"></circle-progress>
-  </div>
+  <!-- </div> -->
 
   <ion-fab vertical="bottom" horizontal="start" slot="fixed">
     <ion-fab-button (click)="setOptions()" color="dark">

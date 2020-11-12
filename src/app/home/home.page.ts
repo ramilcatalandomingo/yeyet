@@ -21,16 +21,16 @@ export class HomePage implements OnInit {
   overallProgress: any = 0;
   percent: number = 0;
   radius: number = 100;
-  minutes: number = 0;
-  seconds: any = 10;
+  minutes: number = 1;
+  seconds: any = 0;
   timer: any = false;
   overallTimer: any = false;
-  fullTime: any = '00:00:10';
+  fullTime: any = '00:01:00';
 
   countDownTimer: any = false;
   timeLeft: any = {
-    m: '00',
-    s: '10'
+    m: '01',
+    s: '00'
   };
   remainingTime = `${this.timeLeft.m}:${this.timeLeft.s}`;
 
@@ -92,11 +92,7 @@ export class HomePage implements OnInit {
     let secondsLeft = totalSeconds;
 
     let forwardsTimer = () => {
-      if (this.percent == this.radius) {
-        this.raiseNotification();
-        this.resetTimer()
-        this.startTimer();
-      }
+      if (this.percent == this.radius) this.resetTimer()
       this.percent = Math.floor((this.progress / totalSeconds) * 100)
       ++this.progress
     }
@@ -107,12 +103,15 @@ export class HomePage implements OnInit {
         this.timeLeft.s = secondsLeft - (60 * this.timeLeft.m)
         this.remainingTime = `${this.pad(this.timeLeft.m, 2)}:${this.pad(this.timeLeft.s, 2)}`
         secondsLeft--;
+
+        if (secondsLeft < 0) secondsLeft = totalSeconds;
       }
     }
 
     // run once when clicked
-    forwardsTimer()
-    backwardsTimer()
+    // forwardsTimer()
+    // backwardsTimer()
+    this.scheduleNotification(totalSeconds);
 
     // timers start 1 second later
     this.countDownTimer = setInterval(backwardsTimer, 1000)
@@ -120,18 +119,22 @@ export class HomePage implements OnInit {
 
   }
 
-  async raiseNotification() {
+  async scheduleNotification(seconds) {
     await LocalNotifications.schedule({
       notifications: [
         {
           title: 'Yeyet Reminder',
           body: 'Please take a quick break from your screen or device by looking 20 feet away or by closing your eyes for 20 seconds.',
           id: 1,
-          schedule: { at: new Date(Date.now()) },
+          schedule:
+          {
+            every: 'second',
+            count: seconds+1
+          },
         }
       ]
     });
-    console.log('this.raiseNotification');
+    console.log('this.scheduleNotification');
   }
 
   cancelNotification() {
@@ -149,18 +152,16 @@ export class HomePage implements OnInit {
   stopTimer() {
 
     this.cancelNotification();
+    this.clearTimerInterval();
+    this.countDownTimer = false;
+    this.overallTimer = false;
+    this.timer = false;
     this.resetTimer();
     this.insomnia.allowSleepAgain()
   }
 
   resetTimer() {
 
-    clearInterval(this.countDownTimer);
-    clearInterval(this.timer);
-    clearInterval(this.overallTimer);
-    this.countDownTimer = false;
-    this.overallTimer = false;
-    this.timer = false;
     this.percent = 0;
     this.progress = 0;
     this.elapsed = {
@@ -169,10 +170,18 @@ export class HomePage implements OnInit {
       s: '00'
     }
     this.timeLeft = {
-      m: '00',
-      s: '10'
+      m: '01',
+      s: '00'
     }
     this.remainingTime = `${this.pad(this.timeLeft.m, 2)}:${this.pad(this.timeLeft.s, 2)}`;
+
+  }
+
+  clearTimerInterval() {
+
+    clearInterval(this.countDownTimer);
+    clearInterval(this.timer);
+    clearInterval(this.overallTimer);
 
   }
 

@@ -21,16 +21,19 @@ export class HomePage implements OnInit {
   overallProgress: any = 0;
   percent: number = 0;
   radius: number = 100;
-  minutes: number = 1;
+  minutes: number = 2;
   seconds: any = 0;
   timer: any = false;
   overallTimer: any = false;
-  fullTime: any = '00:01:00';
+  fullTime: any = '00:02:00';
 
   countDownTimer: any = false;
   timeLeft: any = {
-    m: '01',
-    s: '00'
+    m: '02',
+    s: '00',
+    e: 0,
+    d: 0,
+    t: 0
   };
   remainingTime = `${this.timeLeft.m}:${this.timeLeft.s}`;
 
@@ -65,11 +68,7 @@ export class HomePage implements OnInit {
           // In this function We might finish an upload, let a network request
           // finish, persist some data, or perform some other task
 
-          Storage.set({
-            key: 'timeLeft',
-            value: JSON.stringify(this.timeLeft)
-          });
-
+          this.setTimeLeft();          
           this.stopTimer();
 
           // Must call in order to end our task otherwise
@@ -80,8 +79,45 @@ export class HomePage implements OnInit {
             taskId
           });
         });
-      } 
+      } else {
+        this.getTimeLeft();
+        this.startTimer();
+      }
     })
+  }
+
+  async setTimeLeft() {
+    
+    this.timeLeft.d = new Date().getTime(); // Set the current time when backgrounded
+
+    await Storage.set({
+      key: 'timeLeft',
+      value: JSON.stringify(this.timeLeft)
+    });
+  }
+  
+  async getTimeLeft() {
+
+    await Storage.get({ key: 'timeLeft' }).then((result) => {
+      this.timeLeft = JSON.parse(result.value);
+
+      var c = new Date().getTime(); // Get the foregrounded time
+      var d = new Date(this.timeLeft.d).getTime(); // Get the backgrounded time
+      var ms = c - d; // Get the difference in milliseconds
+      var s = Math.round(ms / 1000); // Convert from milliseconds to seconds
+      var r = parseInt(this.timeLeft.t) - parseInt(this.timeLeft.e) - (s > parseInt(this.timeLeft.t) ? s % parseInt(this.timeLeft.t) : s); // Get the remainder seconds based on total seconds from setup
+      
+      this.timeLeft.m = Math.floor(r / 60)
+      this.timeLeft.s = r - (60 * this.timeLeft.m)
+      this.fullTime = `00:${this.pad(this.timeLeft.m, 2)}:${this.pad(this.timeLeft.s, 2)}`
+      this.remainingTime = `${this.pad(this.timeLeft.m, 2)}:${this.pad(this.timeLeft.s, 2)}`;
+
+      // this.presentAlert('fulltime', this.fullTime);
+      // this.presentAlert('elapsed', this.timeLeft.t);
+      // this.presentAlert('elapsed', this.timeLeft.e);
+      // this.presentAlert('diff', r);
+      // this.presentAlert('diff', s);
+    });
   }
 
   async presentAlert(header, message) {
@@ -98,7 +134,7 @@ export class HomePage implements OnInit {
     console.log('touched');
   }
 
-  startTimer() {
+  async startTimer() {
 
     if (this.timer) {
       clearInterval(this.timer);
@@ -119,6 +155,7 @@ export class HomePage implements OnInit {
 
     let totalSeconds = Math.floor(this.minutes * 60) + parseInt(this.seconds);
     let secondsLeft = totalSeconds;
+    this.timeLeft.t = totalSeconds;
 
     let forwardsTimer = () => {
       if (this.percent == this.radius) this.resetTimer()
@@ -130,6 +167,7 @@ export class HomePage implements OnInit {
       if (secondsLeft >= 0) {
         this.timeLeft.m = Math.floor(secondsLeft / 60)
         this.timeLeft.s = secondsLeft - (60 * this.timeLeft.m)
+        this.timeLeft.e++;
         this.remainingTime = `${this.pad(this.timeLeft.m, 2)}:${this.pad(this.timeLeft.s, 2)}`
         secondsLeft--;
 
@@ -199,8 +237,11 @@ export class HomePage implements OnInit {
       s: '00'
     }
     this.timeLeft = {
-      m: '01',
-      s: '00'
+      m: '02',
+      s: '00',
+      e: 0,
+      d: 0,
+      t: 0
     }
     this.remainingTime = `${this.pad(this.timeLeft.m, 2)}:${this.pad(this.timeLeft.s, 2)}`;
 

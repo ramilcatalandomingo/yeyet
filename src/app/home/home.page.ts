@@ -156,8 +156,9 @@ export class HomePage implements OnInit {
       if (this.percent == this.radius) this.resetTimer()
       ++this.progress
       this.percent = Math.floor((this.progress / totalSeconds) * 100)
-      console.log('progress', this.progress);
-      console.log('percent', this.percent)
+      
+      // console.log('progress', this.progress);
+      // console.log('percent', this.percent)
     }
 
     let backwardsTimer = () => {

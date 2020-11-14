@@ -11,6 +11,8 @@ import { AppRoutingModule } from './app-routing.module';
 import { Insomnia } from '@ionic-native/insomnia/ngx';
 import { NavigationBar } from '@ionic-native/navigation-bar/ngx';
 
+import { BackgroundMode } from '@ionic-native/background-mode/ngx';
+
 @NgModule({
   declarations: [AppComponent],
   entryComponents: [],
@@ -20,6 +22,7 @@ import { NavigationBar } from '@ionic-native/navigation-bar/ngx';
     SplashScreen,
     Insomnia,
     NavigationBar,
+    BackgroundMode,
     { provide: RouteReuseStrategy, useClass: IonicRouteStrategy }
   ],
   bootstrap: [AppComponent]

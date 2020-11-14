@@ -3,6 +3,7 @@ import { Insomnia } from '@ionic-native/insomnia/ngx';
 import { NavigationBar } from '@ionic-native/navigation-bar/ngx';
 import { Plugins, LocalNotificationEnabledResult, LocalNotificationActionPerformed, LocalNotification, Device, LocalNotificationPendingList } from '@capacitor/core';
 import { AlertController } from '@ionic/angular';
+import { BackgroundMode } from '@ionic-native/background-mode/ngx';
 const { LocalNotifications, App, BackgroundTask, Storage } = Plugins;
 
 @Component({
@@ -37,11 +38,19 @@ export class HomePage implements OnInit {
   };
   remainingTime = `${this.timeLeft.minutes}:${this.timeLeft.seconds}`;
 
-  constructor(private insomnia: Insomnia, private navigationBar: NavigationBar, private alertCtrl: AlertController) {
+  constructor(private insomnia: Insomnia, private navigationBar: NavigationBar, 
+    private alertCtrl: AlertController, private backgroundMode: BackgroundMode) {
 
     let autoHide: boolean = true;
     this.navigationBar.setUp(autoHide);
-
+  
+    this.backgroundMode.enable();
+    this.backgroundMode.on("activate").subscribe(() => {
+      // this.setTimeLeft().then(() => { this.stopTimer(); });
+    });
+    this.backgroundMode.on("deactivate").subscribe(() => {
+      // this.getTimeLeft().then(() => { this.startTimer(); });
+    });
   }
 
   async ngOnInit() {
@@ -57,31 +66,31 @@ export class HomePage implements OnInit {
       // console.log(`Performed: ${notification.actionId}`, null);
     });
 
-    App.addListener('appStateChange', (state) => {
+    // App.addListener('appStateChange', (state) => {
 
-      if (!state.isActive) {
-        // The app has become inactive. We should check if we have some work left to do, and, if so,
-        // execute a background task that will allow us to finish that work before the OS
-        // suspends or terminates our app:
+    //   if (!state.isActive) {
+    //     // The app has become inactive. We should check if we have some work left to do, and, if so,
+    //     // execute a background task that will allow us to finish that work before the OS
+    //     // suspends or terminates our app:
     
-        let taskId = BackgroundTask.beforeExit(async () => {
-          // In this function We might finish an upload, let a network request
-          // finish, persist some data, or perform some other task
+    //     let taskId = BackgroundTask.beforeExit(async () => {
+    //       // In this function We might finish an upload, let a network request
+    //       // finish, persist some data, or perform some other task
 
-          this.setTimeLeft().then(() => { this.stopTimer(); });
+    //       this.setTimeLeft().then(() => { this.stopTimer(); });
 
-          // Must call in order to end our task otherwise
-          // we risk our app being terminated, and possibly
-          // being labeled as impacting battery life
+    //       // Must call in order to end our task otherwise
+    //       // we risk our app being terminated, and possibly
+    //       // being labeled as impacting battery life
 
-          BackgroundTask.finish({
-            taskId
-          });
-        });
-      } else {
-        this.getTimeLeft().then(() => { this.startTimer(); });
-      }
-    })
+    //       BackgroundTask.finish({
+    //         taskId
+    //       });
+    //     });
+    //   } else {
+    //     this.getTimeLeft().then(() => { this.startTimer(); });
+    //   }
+    // })
   }
 
   async setTimeLeft() {
@@ -137,7 +146,7 @@ export class HomePage implements OnInit {
     }
     if (!this.overallTimer) {
       this.progressTimer();
-      this.insomnia.keepAwake()
+      // this.insomnia.keepAwake()
     }
 
     this.timer = false;
@@ -151,6 +160,7 @@ export class HomePage implements OnInit {
     let totalSeconds = Math.floor(this.minutes * 60) + parseInt(this.seconds);
     let secondsLeft = totalSeconds;
     this.timeLeft.totalSeconds = totalSeconds;
+    this.timeLeft.elapsed = 0;
 
     let forwardsTimer = () => {
       if (this.percent == this.radius) this.resetTimer()
@@ -174,8 +184,8 @@ export class HomePage implements OnInit {
     }
 
     // run once when clicked
-    forwardsTimer()
-    backwardsTimer()
+    // forwardsTimer()
+    // backwardsTimer()
     if (!this.notifier) this.scheduleNotification(totalSeconds);
 
     // timers start 1 second later
@@ -222,7 +232,7 @@ export class HomePage implements OnInit {
     this.overallTimer = false;
     this.timer = false;
     this.resetTimer();
-    this.insomnia.allowSleepAgain()
+    // this.insomnia.allowSleepAgain()
   }
 
   resetTimer() {

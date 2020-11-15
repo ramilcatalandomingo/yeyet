@@ -24,18 +24,21 @@ export class HomePage implements OnInit {
   overallProgress: any = 0;
   percent: number = 0;
   radius: number = 100;
-  minutes: number = 1;
-  seconds: any = 0;
+  minutes: number = 0;
+  seconds: any = 10;
   timer: any = false;
   overallTimer: any = false;
-  fullTime: any = '00:01:00';
+  fullTime: any = '00:00:10';
   notifier: any = false;
-  countDownTimer: any = false;
+  // countDownTimer: any = false;
   timeLeft: any = {
-    m: '01',
-    s: '00'
+    minutes: '00',
+    seconds: '10',
+    elapsed: 0,
+    bgTime: 0,
+    totalSeconds: 0
   };
-  remainingTime = `${this.timeLeft.m}:${this.timeLeft.s}`;
+  remainingTime = `${this.timeLeft.minutes}:${this.timeLeft.seconds}`;
   reminders: any = [
     { message: 'Please close your eyes for 20 seconds.' },
     { message: 'Please look 20 feet away for 20 seconds.' }
@@ -46,12 +49,46 @@ export class HomePage implements OnInit {
 
     let autoHide: boolean = true;
     this.navigationBar.setUp(autoHide);
-    this.backgroundMode.enable();
 
+    this.backgroundMode.enable();
+    this.backgroundMode.on("activate").subscribe(() => {
+      this.setTimeLeft(); //.then(() => { this.stopTimer(); });
+    });
+    this.backgroundMode.on("deactivate").subscribe(() => {
+      this.getTimeLeft(); //.then(() => { this.startTimer(); });
+    });
   }
 
   async ngOnInit() {
     await LocalNotifications.requestPermission();
+  }
+
+  async setTimeLeft() {
+    this.timeLeft.bgTime = new Date().getTime(); // Set the current time when backgrounded
+    await Storage.set({
+      key: 'timeLeft',
+      value: JSON.stringify(this.timeLeft)
+    });
+  }
+
+  async getTimeLeft() {
+    await Storage.get({ key: 'timeLeft' }).then((result) => {
+      this.timeLeft = JSON.parse(result.value);
+
+      var fgTime = new Date().getTime(); // Get the foregrounded time
+      var bgTime = new Date(this.timeLeft.bgTime).getTime(); // Get the backgrounded time
+      var ms = fgTime - bgTime; // Get the difference in milliseconds
+      var s = Math.round(ms / 1000); // Convert from milliseconds to seconds
+      var remainder = parseInt(this.timeLeft.totalSeconds) - parseInt(this.timeLeft.elapsed) - (s > parseInt(this.timeLeft.totalSeconds) ? s % parseInt(this.timeLeft.totalSeconds) : s); // Get the remainder seconds based on total seconds from setup
+      
+      this.progress = this.timeLeft.totalSeconds - remainder;
+      this.percent = Math.floor((this.progress / parseInt(this.timeLeft.totalSeconds)) * 100)
+
+      this.timeLeft.minutes = Math.floor(remainder / 60)
+      this.timeLeft.seconds = remainder - (60 * this.timeLeft.minutes)
+      this.fullTime = `00:${this.pad(this.timeLeft.minutes, 2)}:${this.pad(this.timeLeft.seconds, 2)}`
+      this.remainingTime = `${this.pad(this.timeLeft.minutes, 2)}:${this.pad(this.timeLeft.seconds, 2)}`;
+    });
   }
 
   touchMe() {
@@ -62,7 +99,7 @@ export class HomePage implements OnInit {
 
     if (this.timer) {
       clearInterval(this.timer);
-      clearInterval(this.countDownTimer);
+      // clearInterval(this.countDownTimer);
     }
     if (!this.overallTimer) {
       this.progressTimer();
@@ -70,8 +107,8 @@ export class HomePage implements OnInit {
     }
 
     this.timer = false;
-    this.percent = 0;
-    this.progress = 0;
+    // this.percent = 0;
+    // this.progress = 0;
 
     let timeSplit = this.fullTime.split(':');
     this.minutes = timeSplit[1];
@@ -79,29 +116,57 @@ export class HomePage implements OnInit {
 
     let totalSeconds = Math.floor(this.minutes * 60) + parseInt(this.seconds);
     let secondsLeft = totalSeconds;
+    this.timeLeft.totalSeconds = totalSeconds;
+    this.timeLeft.elapsed = 0;
 
     let forwardsTimer = () => {
-      if (this.percent == this.radius) clearInterval(this.timer)
-      this.percent = Math.floor((this.progress / totalSeconds) * 100)
-      ++this.progress
-    }
+      // if (this.percent == this.radius) this.resetTimer() //clearInterval(this.timer)
+      console.log('secondsLeft A -', secondsLeft);
+      console.log('progress A -', this.progress);
 
-    let backwardsTimer = () => {
       if (secondsLeft >= 0) {
-        this.timeLeft.m = Math.floor(secondsLeft / 60)
-        this.timeLeft.s = secondsLeft - (60 * this.timeLeft.m)
-        this.remainingTime = `${this.pad(this.timeLeft.m, 2)}:${this.pad(this.timeLeft.s, 2)}`
+        this.percent = Math.floor((this.progress / totalSeconds) * 100)
+        ++this.progress
+
+        this.timeLeft.minutes = Math.floor(secondsLeft / 60)
+        this.timeLeft.seconds = secondsLeft - (60 * this.timeLeft.minutes)
+        this.timeLeft.elapsed++;
+        this.remainingTime = `${this.pad(this.timeLeft.minutes, 2)}:${this.pad(this.timeLeft.seconds, 2)}`
+
+        if (secondsLeft == 0) 
+        {
+          this.resetTimer();
+          this.percent = 100;
+          this.progress = 1;
+          secondsLeft = totalSeconds;
+        }
+
         secondsLeft--;
       }
+
+      console.log('secondsLeft B -', secondsLeft);
+      console.log('progress B -', this.progress);
     }
+
+    // let backwardsTimer = () => {
+    //   console.log(secondsLeft);
+    //   if (secondsLeft >= 0) {
+    //     this.timeLeft.minutes = Math.floor(secondsLeft / 60)
+    //     this.timeLeft.seconds = secondsLeft - (60 * this.timeLeft.minutes)
+    //     this.timeLeft.elapsed++;
+    //     this.remainingTime = `${this.pad(this.timeLeft.minutes, 2)}:${this.pad(this.timeLeft.seconds, 2)}`
+    //     secondsLeft--;
+    //     if (secondsLeft < 0) secondsLeft = totalSeconds;
+    //   }
+    // }
 
     // run once when clicked
     forwardsTimer()
-    backwardsTimer()
+    // backwardsTimer()
     if (!this.notifier) this.scheduleNotification(totalSeconds+1);
 
     // timers start 1 second later
-    this.countDownTimer = setInterval(backwardsTimer, 1000)
+    // this.countDownTimer = setInterval(backwardsTimer, 1000)
     this.timer = setInterval(forwardsTimer, 1000)
   }
 
@@ -125,12 +190,16 @@ export class HomePage implements OnInit {
 
   stopTimer() {
     this.cancelNotification();
-    clearInterval(this.countDownTimer);
-    clearInterval(this.timer);
-    clearInterval(this.overallTimer);
-    this.countDownTimer = false;
+    this.clearTimerInterval();
+    // this.countDownTimer = false;
     this.overallTimer = false;
     this.timer = false;
+    this.resetTimer();
+    this.insomnia.allowSleepAgain()
+  }
+
+  resetTimer() {
+    console.log('reset timer');
     this.percent = 0;
     this.progress = 0;
     this.elapsed = {
@@ -139,11 +208,22 @@ export class HomePage implements OnInit {
       s: '00'
     }
     this.timeLeft = {
-      m: '00',
-      s: '00'
+      minutes: '00',
+      seconds: '10',
+      elapsed: 0,
+      bgTime: 0,
+      totalSeconds: 0,
+      progress: 0,
+      percent: 0
     }
-    this.remainingTime = `${this.pad(this.timeLeft.m, 2)}:${this.pad(this.timeLeft.s, 2)}`;
-    this.insomnia.allowSleepAgain()
+    this.remainingTime = `${this.pad(this.timeLeft.minutes, 2)}:${this.pad(this.timeLeft.seconds, 2)}`;
+
+  }
+
+  clearTimerInterval() {
+    // clearInterval(this.countDownTimer);
+    clearInterval(this.timer);
+    clearInterval(this.overallTimer);
   }
 
   cancelNotification() {

@@ -24,16 +24,16 @@ export class HomePage implements OnInit {
   overallProgress: any = 0;
   percent: number = 0;
   radius: number = 100;
-  minutes: number = 0;
-  seconds: any = 10;
+  minutes: number = 1;
+  seconds: any = 0;
   timer: any = false;
   overallTimer: any = false;
-  fullTime: any = '00:00:10';
+  fullTime: any = '00:01:00';
   notifier: any = false;
   // countDownTimer: any = false;
   timeLeft: any = {
-    minutes: '00',
-    seconds: '10',
+    minutes: '01',
+    seconds: '00',
     elapsed: 0,
     bgTime: 0,
     totalSeconds: 0
@@ -42,7 +42,8 @@ export class HomePage implements OnInit {
   reminders: any = [
     { message: 'Please close your eyes for 20 seconds.' },
     { message: 'Please look 20 feet away for 20 seconds.' }
-  ]
+  ];
+  remindInSeconds: number = 60;
 
   constructor(private insomnia: Insomnia, private navigationBar: NavigationBar, 
     private alertCtrl: AlertController, private backgroundMode: BackgroundMode) {
@@ -52,10 +53,16 @@ export class HomePage implements OnInit {
 
     this.backgroundMode.enable();
     this.backgroundMode.on("activate").subscribe(() => {
-      this.setTimeLeft(); //.then(() => { this.stopTimer(); });
+      this.setTimeLeft().then(() => {
+        this.stopTimer();
+        console.log('setTimeLeft', 'setTimeLeft') 
+      });
     });
     this.backgroundMode.on("deactivate").subscribe(() => {
-      this.getTimeLeft(); //.then(() => { this.startTimer(); });
+      this.getTimeLeft().then(() => {
+        this.startTimer(true);
+        console.log('getTimeLeft', 'getTimeLeft')
+      });
     });
   }
 
@@ -95,10 +102,10 @@ export class HomePage implements OnInit {
     console.log('touched');
   }
 
-  startTimer() {
+  startTimer(restart) {
 
     if (this.timer) {
-      clearInterval(this.timer);
+      // clearInterval(this.timer);
       // clearInterval(this.countDownTimer);
     }
     if (!this.overallTimer) {
@@ -117,7 +124,7 @@ export class HomePage implements OnInit {
     let totalSeconds = Math.floor(this.minutes * 60) + parseInt(this.seconds);
     let secondsLeft = totalSeconds;
     this.timeLeft.totalSeconds = totalSeconds;
-    this.timeLeft.elapsed = 0;
+    // this.timeLeft.elapsed = 0;
 
     let forwardsTimer = () => {
       // if (this.percent == this.radius) this.resetTimer() //clearInterval(this.timer)
@@ -161,16 +168,16 @@ export class HomePage implements OnInit {
     // }
 
     // run once when clicked
-    forwardsTimer()
+    if (!restart) forwardsTimer();
     // backwardsTimer()
-    if (!this.notifier) this.scheduleNotification(totalSeconds+1);
+    if (!this.notifier) this.scheduleNotification();
 
     // timers start 1 second later
     // this.countDownTimer = setInterval(backwardsTimer, 1000)
     this.timer = setInterval(forwardsTimer, 1000)
   }
 
-  async scheduleNotification(seconds) {
+  async scheduleNotification() {
     await LocalNotifications.schedule({
       notifications: [
         {
@@ -180,7 +187,7 @@ export class HomePage implements OnInit {
           schedule:
           {
             every: 'second',
-            count: seconds
+            count: this.remindInSeconds
           },
         }
       ]
@@ -208,8 +215,8 @@ export class HomePage implements OnInit {
       s: '00'
     }
     this.timeLeft = {
-      minutes: '00',
-      seconds: '10',
+      minutes: '01',
+      seconds: '00',
       elapsed: 0,
       bgTime: 0,
       totalSeconds: 0,

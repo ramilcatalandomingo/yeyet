@@ -1,4 +1,4 @@
-package io.ionic.starter;
+package com.innov8technologies.yeyet;
 
 import android.os.Bundle;
 

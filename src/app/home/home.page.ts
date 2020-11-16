@@ -27,7 +27,7 @@ export class HomePage implements OnInit {
   minutes: number = 1;
   seconds: any = 0;
   timer: any = false;
-  overallTimer: any = false;
+  // overallTimer: any = false;
   fullTime: any = '00:01:00';
   notifier: any = false;
   // countDownTimer: any = false;
@@ -43,30 +43,30 @@ export class HomePage implements OnInit {
     { message: 'Please close your eyes for 20 seconds.' },
     { message: 'Please look 20 feet away for 20 seconds.' }
   ];
-  remindInSeconds: number = 60;
 
   constructor(private insomnia: Insomnia, private navigationBar: NavigationBar, 
     private alertCtrl: AlertController, private backgroundMode: BackgroundMode) {
 
-    let autoHide: boolean = true;
-    this.navigationBar.setUp(autoHide);
-
-    this.backgroundMode.enable();
-    this.backgroundMode.on("activate").subscribe(() => {
-      this.setTimeLeft().then(() => {
-        this.stopTimer();
-        console.log('setTimeLeft', 'setTimeLeft') 
-      });
-    });
-    this.backgroundMode.on("deactivate").subscribe(() => {
-      this.getTimeLeft().then(() => {
-        this.startTimer(true);
-        console.log('getTimeLeft', 'getTimeLeft')
-      });
-    });
+    this.navigationBar.setUp(true);
   }
 
   async ngOnInit() {
+    // this.backgroundMode.enable();
+
+    // this.backgroundMode.on("activate").subscribe(() => {
+    //   this.setTimeLeft().then(() => {
+    //     this.stopTimer();
+    //     console.log('setTimeLeft', 'setTimeLeft') 
+    //   });
+    // });
+
+    // this.backgroundMode.on("deactivate").subscribe(() => {
+    //   this.getTimeLeft().then(() => {
+    //     this.startTimer(true);
+    //     console.log('getTimeLeft', 'getTimeLeft')
+    //   });
+    // });
+
     await LocalNotifications.requestPermission();
   }
 
@@ -104,16 +104,18 @@ export class HomePage implements OnInit {
 
   startTimer(restart) {
 
-    if (this.timer) {
-      // clearInterval(this.timer);
-      // clearInterval(this.countDownTimer);
-    }
-    if (!this.overallTimer) {
-      this.progressTimer();
-      this.insomnia.keepAwake()
-    }
+    // if (this.timer) {
+    //   clearInterval(this.timer);
+    //   clearInterval(this.countDownTimer);
+    // }
+
+    // if (!this.overallTimer) {
+    //   this.progressTimer();
+    //   this.insomnia.keepAwake()
+    // }
 
     this.timer = false;
+
     // this.percent = 0;
     // this.progress = 0;
 
@@ -142,6 +144,7 @@ export class HomePage implements OnInit {
 
         if (secondsLeft == 0) 
         {
+          this.scheduleNotification();
           this.resetTimer();
           this.percent = 100;
           this.progress = 1;
@@ -170,7 +173,7 @@ export class HomePage implements OnInit {
     // run once when clicked
     if (!restart) forwardsTimer();
     // backwardsTimer()
-    if (!this.notifier) this.scheduleNotification();
+    // if (!this.notifier) this.scheduleNotification();
 
     // timers start 1 second later
     // this.countDownTimer = setInterval(backwardsTimer, 1000)
@@ -186,8 +189,7 @@ export class HomePage implements OnInit {
           id: 1,
           schedule:
           {
-            every: 'second',
-            count: this.remindInSeconds
+            at: new Date(Date.now())
           },
         }
       ]
@@ -197,12 +199,13 @@ export class HomePage implements OnInit {
 
   stopTimer() {
     this.cancelNotification();
-    this.clearTimerInterval();
+    // this.clearTimerInterval();
     // this.countDownTimer = false;
-    this.overallTimer = false;
+    // this.overallTimer = false;
+    clearInterval(this.timer);
     this.timer = false;
     this.resetTimer();
-    this.insomnia.allowSleepAgain()
+    // this.insomnia.allowSleepAgain()
   }
 
   resetTimer() {
@@ -227,11 +230,11 @@ export class HomePage implements OnInit {
 
   }
 
-  clearTimerInterval() {
-    // clearInterval(this.countDownTimer);
-    clearInterval(this.timer);
-    clearInterval(this.overallTimer);
-  }
+  // clearTimerInterval() {
+  //   clearInterval(this.countDownTimer);
+  //   clearInterval(this.timer);
+  //   clearInterval(this.overallTimer);
+  // }
 
   cancelNotification() {
     const pending: LocalNotificationPendingList = {
@@ -246,27 +249,27 @@ export class HomePage implements OnInit {
     return LocalNotifications.cancel(pending);
   }
 
-  progressTimer() {
-    let countDownDate = new Date();
+  // progressTimer() {
+  //   let countDownDate = new Date();
 
-    this.overallTimer = setInterval(() => {
-      let now = new Date().getTime();
+  //   this.overallTimer = setInterval(() => {
+  //     let now = new Date().getTime();
 
-      // Find the distance between now an the count down date
-      var distance = now - countDownDate.getTime();
+  //     // Find the distance between now an the count down date
+  //     var distance = now - countDownDate.getTime();
 
-      // Time calculations for hours, minutes and seconds
+  //     // Time calculations for hours, minutes and seconds
 
-      this.elapsed.h = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-      this.elapsed.m = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-      this.elapsed.s = Math.floor((distance % (1000 * 60)) / 1000);
+  //     this.elapsed.h = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+  //     this.elapsed.m = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+  //     this.elapsed.s = Math.floor((distance % (1000 * 60)) / 1000);
 
-      this.elapsed.h = this.pad(this.elapsed.h, 2);
-      this.elapsed.m = this.pad(this.elapsed.m, 2);
-      this.elapsed.s = this.pad(this.elapsed.s, 2);
+  //     this.elapsed.h = this.pad(this.elapsed.h, 2);
+  //     this.elapsed.m = this.pad(this.elapsed.m, 2);
+  //     this.elapsed.s = this.pad(this.elapsed.s, 2);
 
-    }, 1000)
-  }
+  //   }, 1000)
+  // }
 
   pad(num, size) {
     let s = num + "";

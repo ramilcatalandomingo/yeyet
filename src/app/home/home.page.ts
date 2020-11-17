@@ -318,4 +318,7 @@ export class HomePage implements OnInit {
     console.log($event.split(":"));
   }
 
+  setOptions() {
+    
+  }
 }

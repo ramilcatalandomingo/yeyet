@@ -11,6 +11,7 @@
 .DS_Store
 Thumbs.db
 UserInterfaceState.xcuserstate
+keystore.properties
 $RECYCLE.BIN/
 
 *.log

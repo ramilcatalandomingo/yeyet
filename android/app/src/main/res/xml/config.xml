@@ -21,8 +21,17 @@
     <param name="android-package" value="nl.xservices.plugins.Insomnia"/>
   </feature>
 
+  <feature name="IonicCordovaCommon">
+    <param name="android-package" value="com.ionicframework.common.IonicCordovaCommon" onload="true"/>
+  </feature>
+
   <feature name="NavigationBar">
     <param name="android-package" value="com.cranberrygame.cordova.plugin.navigationbar.NavigationBar"/>
+  </feature>
+
+  <feature name="Whitelist">
+    <param name="android-package" value="org.apache.cordova.whitelist.WhitelistPlugin"/>
+    <param name="onload" value="true"/>
   </feature>
 
   

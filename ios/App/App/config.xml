@@ -15,5 +15,9 @@
     <param name="ios-package" value="Insomnia"/>
   </feature>
 
+  <feature name="IonicCordovaCommon">
+    <param name="ios-package" value="IonicCordovaCommon" onload="true"/>
+  </feature>
+
   
 </widget>

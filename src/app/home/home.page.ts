@@ -1,9 +1,10 @@
-import { Component, OnInit } from '@angular/core';
+import { AfterViewInit, Component, OnInit, ViewChild } from '@angular/core';
 import { Insomnia } from '@ionic-native/insomnia/ngx';
 import { NavigationBar } from '@ionic-native/navigation-bar/ngx';
 import { BackgroundMode } from '@ionic-native/background-mode/ngx';
 import { AlertController } from '@ionic/angular';
 import { Plugins, LocalNotificationEnabledResult, LocalNotificationActionPerformed, LocalNotification, Device, LocalNotificationPendingList } from '@capacitor/core';
+import { CircleProgressComponent } from 'ng-circle-progress';
 const { LocalNotifications, App, BackgroundTask, Storage } = Plugins;
 
 @Component({
@@ -14,6 +15,8 @@ const { LocalNotifications, App, BackgroundTask, Storage } = Plugins;
 
 
 export class HomePage implements OnInit {
+
+  @ViewChild(CircleProgressComponent) circleProgress: CircleProgressComponent;
 
   // elapsed: any = {
   //   h: '00',
@@ -45,6 +48,7 @@ export class HomePage implements OnInit {
     { message: 'Please close your eyes for 20 seconds.' },
     { message: 'Please look 20 feet away for 20 seconds.' }
   ];
+  isActive: boolean = true;
 
   constructor(private insomnia: Insomnia, private navigationBar: NavigationBar, 
     private alertCtrl: AlertController, private backgroundMode: BackgroundMode) {
@@ -54,6 +58,31 @@ export class HomePage implements OnInit {
 
   async ngOnInit() {
     await LocalNotifications.requestPermission();
+  
+    App.addListener('appStateChange', (state) => {
+      if (!state.isActive) {
+        // The app has become inactive. We should check if we have some work left to do, and, if so,
+        // execute a background task that will allow us to finish that work before the OS
+        // suspends or terminates our app:
+    
+        let taskId = BackgroundTask.beforeExit(async () => {
+          // In this function We might finish an upload, let a network request
+          // finish, persist some data, or perform some other task
+
+          this.setTimeLeft().then(() => { this.stopTimer(); });
+
+          // Must call in order to end our task otherwise
+          // we risk our app being terminated, and possibly
+          // being labeled as impacting battery life
+
+          BackgroundTask.finish({
+            taskId
+          });
+        });
+      } else {
+        this.getTimeLeft().then(() => { this.startTimer(true); });
+      }
+    })
   }
 
   async setTimeLeft() {
@@ -99,82 +128,27 @@ export class HomePage implements OnInit {
     console.log('touched');
   }
 
-  startTimer() {
+  startTimer(resume) {
 
-    // if (this.timer) {
-    //   clearInterval(this.timer);
-    //   clearInterval(this.countDownTimer);
-    // }
+    this.isActive = true;
 
-    // if (!this.overallTimer) {
-    //   this.progressTimer();
-    //   this.insomnia.keepAwake()
-    // }
-
-    this.timer = false;
-    this.secondsLeft = this.totalSeconds;
-    this.timeLeft.totalSeconds = this.totalSeconds;
-
-    console.log('startTimer', 'startTimer');
-    
-    this.backgroundMode.enable();
-    this.backgroundMode.on("activate").subscribe(() => {
-      this.setTimeLeft().then(() => {
-        // this.stopTimer();
-        console.log('setTimeLeft', 'setTimeLeft') 
-      });
-    });
-    this.backgroundMode.on("deactivate").subscribe(() => {
-      this.getTimeLeft().then(() => {
-        // this.startTimer(true);
-        console.log('getTimeLeft', 'getTimeLeft');
-        
-        let forwardsTimer = () => {
-          // if (this.percent == this.radius) this.resetTimer() //clearInterval(this.timer)
-          console.log('A. secondsLeft', this.secondsLeft);
-          console.log('B. progress', this.progress);
-    
-          if (this.secondsLeft >= 0) {
-            this.percent = Math.floor((this.progress / this.totalSeconds) * 100)
-            ++this.progress
-    
-            this.timeLeft.minutes = Math.floor(this.secondsLeft / 60)
-            this.timeLeft.seconds = this.secondsLeft - (60 * this.timeLeft.minutes)
-            this.timeLeft.progress = this.progress;
-            this.remainingTime = `${this.pad(this.timeLeft.minutes, 2)}:${this.pad(this.timeLeft.seconds, 2)}`
-    
-            if (this.secondsLeft == 0) 
-            {
-              this.resetTimer();
-              this.percent = 100;
-              this.progress = 1;
-            }
-    
-            this.secondsLeft--;
-          }
-        }
-        this.timer = setInterval(forwardsTimer, 1000)
-      });
-    });
+    if (!resume)
+    {
+      this.timer = false;
+      this.secondsLeft = this.totalSeconds;
+      this.timeLeft.totalSeconds = this.totalSeconds;
+    } else {
+      this.circleProgress.render();
+    }
 
     // this.insomnia.keepAwake()
 
-    // this.percent = 0;
-    // this.progress = 0;
-
-    // let timeSplit = this.fullTime.split(':');
-    // this.minutes = timeSplit[1];
-    // this.seconds = timeSplit[2];
-
-    console.log('restartedTimer', 'restartedTimer');
-
-    // let totalSeconds = Math.floor(this.minutes * 60) + parseInt(this.seconds);
-    // this.timeLeft.elapsed = 0;
-
     let forwardsTimer = () => {
-      // if (this.percent == this.radius) this.resetTimer() //clearInterval(this.timer)
       console.log('1. secondsLeft', this.secondsLeft);
       console.log('2. progress', this.progress);
+      console.log('3. percent', this.percent);
+      console.log('4. remainingTime', this.remainingTime);
+      console.log('5. isActive', this.isActive);
 
       if (this.secondsLeft >= 0) {
         this.percent = Math.floor((this.progress / this.totalSeconds) * 100)
@@ -187,7 +161,6 @@ export class HomePage implements OnInit {
 
         if (this.secondsLeft == 0) 
         {
-          // this.scheduleNotification();
           this.resetTimer();
           this.percent = 100;
           this.progress = 1;
@@ -195,30 +168,13 @@ export class HomePage implements OnInit {
 
         this.secondsLeft--;
       }
-
-      // console.log('secondsLeft B -', this.secondsLeft);
-      // console.log('progress B -', this.progress);
     }
-
-    // let backwardsTimer = () => {
-    //   console.log(secondsLeft);
-    //   if (secondsLeft >= 0) {
-    //     this.timeLeft.minutes = Math.floor(secondsLeft / 60)
-    //     this.timeLeft.seconds = secondsLeft - (60 * this.timeLeft.minutes)
-    //     this.timeLeft.elapsed++;
-    //     this.remainingTime = `${this.pad(this.timeLeft.minutes, 2)}:${this.pad(this.timeLeft.seconds, 2)}`
-    //     secondsLeft--;
-    //     if (secondsLeft < 0) secondsLeft = totalSeconds;
-    //   }
-    // }
 
     // run once when clicked
     forwardsTimer();
-    // backwardsTimer()
     if (!this.notifier) this.scheduleNotification();
 
     // timers start 1 second later
-    // this.countDownTimer = setInterval(backwardsTimer, 1000)
     this.timer = setInterval(forwardsTimer, 1000)
   }
 
@@ -246,10 +202,11 @@ export class HomePage implements OnInit {
     // this.clearTimerInterval();
     // this.countDownTimer = false;
     // this.overallTimer = false;
+    this.isActive = false;
     clearInterval(this.timer);
     this.timer = false;
     this.resetTimer();
-    this.insomnia.allowSleepAgain()
+    // this.insomnia.allowSleepAgain()
   }
 
   resetTimer() {
